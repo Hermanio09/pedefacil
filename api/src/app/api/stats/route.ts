@@ -17,6 +17,10 @@ export async function GET() {
   return NextResponse.json({
     totalProdutos:    produtos.length,
     produtosEmAlerta: produtos.filter((p) => p.estoqueAtual <= p.estoqueMinimo).length,
+    // Só conta itens com estoque baixo que AINDA não têm pedido enviado — depois que o pedido
+    // sai, o item continua com estoque baixo (isso não muda até chegar), mas não precisa mais
+    // de ação na tela de Pedidos, então some do contador daquele item de menu.
+    pedidosPendentes: produtos.filter((p) => p.estoqueAtual <= p.estoqueMinimo && !p.pedidoPendenteEm).length,
     entradasHoje:     movsHoje.filter((m) => m.tipo === "entrada").reduce((s, m) => s + m.quantidade, 0),
     saidasHoje:       movsHoje.filter((m) => m.tipo === "saida").reduce((s, m) => s + m.quantidade, 0),
   });

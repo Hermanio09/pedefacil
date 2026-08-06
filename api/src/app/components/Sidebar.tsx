@@ -10,7 +10,14 @@ import {
 
 type Me = { userId: string; nome: string; email: string; role: string } | null;
 
-const BADGE_HREFS = ["/produtos", "/pedidos"];
+// Cada rota tem sua própria contagem — "Produtos" mostra estoque baixo (não muda só por ter
+// pedido enviado), "Pedidos" mostra só o que ainda precisa de ação.
+const BADGE_COUNTS: Record<string, keyof Stats> = {
+  "/produtos": "produtosEmAlerta",
+  "/pedidos":  "pedidosPendentes",
+};
+
+type Stats = { produtosEmAlerta: number; pedidosPendentes: number };
 
 const navBase = [
   { href: "/",             label: "Dashboard",    icon: IconGrid,            roles: ["admin","gerente","operador"] },
@@ -32,12 +39,12 @@ export default function Sidebar() {
   const router   = useRouter();
   const [open, setOpen]       = useState(false);
   const [me, setMe]           = useState<Me>(null);
-  const [alertCount, setAlertCount] = useState(0);
+  const [stats, setStats]     = useState<Stats>({ produtosEmAlerta: 0, pedidosPendentes: 0 });
 
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.ok ? r.json() : null).then(setMe);
     fetch("/api/stats").then((r) => r.ok ? r.json() : null).then((s) => {
-      if (s?.produtosEmAlerta) setAlertCount(s.produtosEmAlerta);
+      if (s) setStats({ produtosEmAlerta: s.produtosEmAlerta ?? 0, pedidosPendentes: s.pedidosPendentes ?? 0 });
     });
   }, []);
 
@@ -94,8 +101,8 @@ export default function Sidebar() {
               >
                 <span className="nav-icon-wrap"><Icon size={16} strokeWidth={1.9} /></span>
                 <span style={{ flex: 1 }}>{item.label}</span>
-                {BADGE_HREFS.includes(item.href) && alertCount > 0 && (
-                  <span className="nav-badge">{alertCount}</span>
+                {BADGE_COUNTS[item.href] && stats[BADGE_COUNTS[item.href]] > 0 && (
+                  <span className="nav-badge">{stats[BADGE_COUNTS[item.href]]}</span>
                 )}
               </Link>
             );

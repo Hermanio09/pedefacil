@@ -249,7 +249,9 @@ export default function PedidosPage() {
                   </div>
                 )}
               </div>
-              <span className="badge badge-alerta">{grupo.itens.length} item(s)</span>
+              {grupo.itens.every((it) => it.produto.pedidoPendenteEm)
+                ? <span className="badge badge-ok"><IconCheckCircle size={12} /> Pedido Enviado</span>
+                : <span className="badge badge-alerta">{grupo.itens.length} item(s)</span>}
             </div>
 
             <div className="table-wrap">
