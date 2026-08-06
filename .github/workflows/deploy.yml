@@ -23,7 +23,14 @@ jobs:
       - run: npm ci
       - run: npx prisma generate
       - run: npx tsc --noEmit
-      - run: npm run build
+      - name: npm run build
+        # Valores fictícios só pra passar pelas checagens de "variável definida" que rodam
+        # ao carregar os módulos (ex: JWT_SECRET em src/lib/auth.ts) — o build não conecta
+        # de verdade a nenhum banco nem usa esses valores pra nada além de existir.
+        env:
+          JWT_SECRET: build-check-dummy-secret-nao-e-usado-em-producao
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+        run: npm run build
 
   # Só roda se build-check passar. Não recebe nenhuma senha/credencial de aplicação — só o
   # necessário para entrar no servidor por SSH. As credenciais reais (banco, JWT, etc.) já
