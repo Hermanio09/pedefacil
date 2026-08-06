@@ -86,3 +86,4 @@ O GitHub Actions builda, testa e manda o servidor atualizar sozinho.
 - [ ] WhatsApp conectado na Evolution API (QR Code escaneado)
 - [ ] Teste de envio de pedido de ponta a ponta (Pedidos → Enviar Todos)
 - [ ] Conta de admin criada via `/setup`
+# teste de trigger Thu Aug  6 17:33:28 -03 2026
