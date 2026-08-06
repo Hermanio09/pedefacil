@@ -1,0 +1,35 @@
+version: "3.8"
+
+services:
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: evolution-api
+    restart: always
+    ports:
+      # Só acessível de dentro do próprio servidor (127.0.0.1) — a aplicação Next.js roda na
+      # mesma VPS e chama via localhost. Nunca exponha essa porta pra internet: quem tiver a
+      # API key consegue mandar mensagem por qualquer número conectado.
+      - "127.0.0.1:8080:8080"
+    environment:
+      # Chave forte gerada — ver credenciais-producao-NAO-COMMITAR.txt
+      - AUTHENTICATION_API_KEY=${EVOLUTION_API_KEY}
+      # Tipo de autenticação
+      - AUTHENTICATION_TYPE=apikey
+      # Armazenamento local
+      - DATABASE_ENABLED=false
+      - STORE_MESSAGES=true
+      - STORE_MESSAGE_UP=true
+      - STORE_CONTACTS=false
+      - STORE_CHATS=false
+      # QR Code em base64
+      - QRCODE_LIMIT=30
+      # Logs
+      - LOG_LEVEL=ERROR
+      - LOG_COLOR=true
+    volumes:
+      - evolution_instances:/evolution/instances
+      - evolution_store:/evolution/store
+
+volumes:
+  evolution_instances:
+  evolution_store:

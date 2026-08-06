@@ -1,0 +1,40 @@
+{
+  "name": "pedefacil-api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.102.0",
+    "@google/generative-ai": "^0.24.1",
+    "@prisma/client": "^5.14.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/nodemailer": "^8.0.1",
+    "@types/web-push": "^3.6.4",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.3",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.8",
+    "next": "^15.5.19",
+    "nodemailer": "^9.0.4",
+    "pg": "^8.21.0",
+    "react": "^18",
+    "react-dom": "^18",
+    "recharts": "^3.8.1",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "prisma": "^5.14.0",
+    "typescript": "^5"
+  }
+}

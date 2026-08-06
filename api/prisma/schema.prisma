@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Empresa {
+  id           String   @id @default(cuid())
+  nome         String
+  ramo         String   @default("geral") // restaurante, padaria, mercado, geral...
+  plano        String   @default("basico") // basico, pro, enterprise
+  ativo        Boolean  @default(true)
+  criadoEm    DateTime @default(now())
+
+  usuarios          Usuario[]
+  produtos          Produto[]
+  fornecedores      Fornecedor[]
+  movimentacoes     Movimentacao[]
+  pushSubscriptions PushSubscription[]
+  notasFiscais      NotaFiscal[]
+
+  @@map("empresas")
+}
+
+model Usuario {
+  id        String   @id @default(cuid())
+  empresaId String
+  nome      String
+  email     String   @unique
+  senha     String
+  role      String   @default("operador") // admin | gerente | operador
+  ativo     Boolean  @default(true)
+  criadoEm DateTime @default(now())
+
+  empresa      Empresa      @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  notasFiscais NotaFiscal[]
+
+  @@map("usuarios")
+}
+
+model Fornecedor {
+  id        String    @id @default(cuid())
+  empresaId String
+  nome      String
+  telefone  String?
+  email     String?
+  criadoEm  DateTime  @default(now())
+
+  empresa  Empresa   @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  produtos Produto[]
+
+  @@map("fornecedores")
+}
+
+model Produto {
+  id            String         @id @default(cuid())
+  empresaId     String
+  nome          String
+  unidade       String         @default("UN")
+  estoqueAtual  Float          @default(0)
+  estoqueMinimo Float          @default(5)
+  precoUnitario Float          @default(0) // preço de custo — pago ao fornecedor
+  precoVenda    Float          @default(0) // preço de venda ao cliente final — só muda manualmente
+  fornecedorId  String?
+  criadoEm      DateTime       @default(now())
+
+  empresa       Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  fornecedor    Fornecedor?    @relation(fields: [fornecedorId], references: [id], onDelete: SetNull)
+  movimentacoes Movimentacao[]
+
+  @@map("produtos")
+}
+
+model PushSubscription {
+  id           String   @id @default(cuid())
+  empresaId    String
+  usuarioId    String
+  endpoint     String   @unique
+  subscription String   // JSON completo da PushSubscription
+  criadoEm    DateTime @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+}
+
+model Movimentacao {
+  id              String    @id @default(cuid())
+  empresaId       String
+  produtoId       String
+  tipo            String    // 'entrada' | 'saida' | 'ajuste'
+  quantidade      Float
+  precoUnitario   Float     @default(0)
+  observacao      String?
+  criadoEm        DateTime  @default(now())
+  // Efeito real desta movimentação no estoque (independe do "tipo": um "ajuste" pode ir em
+  // qualquer direção) — usado para saber como reverter corretamente.
+  estoquePositivo Boolean   @default(true)
+  revertida       Boolean   @default(false)
+  revertidaEm     DateTime?
+  revertidaPorNome String?
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+
+  @@map("movimentacoes")
+}
+
+model NotaFiscal {
+  id             String    @id @default(cuid())
+  empresaId      String
+  usuarioId      String
+  tipo           String    // pdf | imagem | xml
+  fornecedorNome String?
+  valorTotal     Float     @default(0)
+  dataEmissao    DateTime?
+  qtdItens       Int       @default(0)
+  criadoEm       DateTime  @default(now())
+
+  empresa  Empresa             @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  usuario  Usuario             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  arquivos NotaFiscalArquivo[]
+
+  @@map("notas_fiscais")
+}
+
+model NotaFiscalArquivo {
+  id           String @id @default(cuid())
+  notaFiscalId String
+  nome         String
+  mimeType     String
+  ordem        Int    @default(0)
+  dados        Bytes
+
+  notaFiscal NotaFiscal @relation(fields: [notaFiscalId], references: [id], onDelete: Cascade)
+
+  @@map("notas_fiscais_arquivos")
+}

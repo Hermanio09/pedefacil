@@ -1,0 +1,50 @@
+name: Deploy PedeFacil
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  # Valida que o código compila antes de sequer tocar no servidor de produção.
+  build-check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: api/package-lock.json
+
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx tsc --noEmit
+      - run: npm run build
+
+  # Só roda se build-check passar. Não recebe nenhuma senha/credencial de aplicação — só o
+  # necessário para entrar no servidor por SSH. As credenciais reais (banco, JWT, etc.) já
+  # estão salvas direto no servidor, em api/.env.production.local, e nunca passam por aqui.
+  deploy:
+    needs: build-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd /opt/pedefacil
+            git pull origin main
+            cd api
+            npm ci
+            npx prisma migrate deploy
+            npm run build
+            pm2 restart pedefacil

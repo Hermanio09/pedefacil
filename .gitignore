@@ -1,0 +1,44 @@
+# Credenciais — NUNCA commitar
+credenciais-producao-NAO-COMMITAR.txt
+.env
+**/.env
+*.env
+*.env.local
+*.env.production.local
+*.env.production
+
+# Dependências
+node_modules/
+**/node_modules/
+
+# Builds
+api/.next/
+mobile/.expo/
+mobile/dist/
+
+# Banco de dados local
+api/prisma/dev.db
+api/prisma/dev.db-journal
+api/prisma/*.db
+api/prisma/*.db-journal
+
+# Sistema operacional / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+npm-debug.log*
+
+# Arquivos de teste/rascunho — não fazem parte do produto
+nota-fiscal-teste.pdf
+nota-fiscal-teste-2.pdf
+nota-teste.xml
+ideia.txt
+
+# Config local do Claude Code — não é parte do projeto
+.claude/
