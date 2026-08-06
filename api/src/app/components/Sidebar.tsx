@@ -43,10 +43,16 @@ export default function Sidebar() {
 
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.ok ? r.json() : null).then(setMe);
+  }, []);
+
+  // Reconsulta as contagens a cada navegação — o Sidebar fica montado o tempo todo (não
+  // remonta ao trocar de página), então sem isso o número ficaria preso no valor de quando
+  // a sessão começou, mesmo depois de lançar nota fiscal, entrada, ou enviar um pedido.
+  useEffect(() => {
     fetch("/api/stats").then((r) => r.ok ? r.json() : null).then((s) => {
       if (s) setStats({ produtosEmAlerta: s.produtosEmAlerta ?? 0, pedidosPendentes: s.pedidosPendentes ?? 0 });
     });
-  }, []);
+  }, [pathname]);
 
   const logout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
