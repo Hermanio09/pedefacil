@@ -49,8 +49,33 @@ npm install -g pm2
 
 echo "═══ 3/9 — Instalando Postgres ═══"
 apt install -y postgresql postgresql-contrib
-sudo -u postgres psql -c "CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';"
-sudo -u postgres psql -c "CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER};"
+# Idempotente: se rodar o script de novo (ex: depois de uma falha em etapa posterior), não
+# tenta recriar usuário/banco que já existem.
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='${POSTGRES_USER}'" | grep -q 1; then
+  sudo -u postgres psql -c "CREATE USER ${POSTGRES_USER} WITH PASSWORD '${POSTGRES_PASSWORD}';"
+fi
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='${POSTGRES_DB}'" | grep -q 1; then
+  sudo -u postgres psql -c "CREATE DATABASE ${POSTGRES_DB} OWNER ${POSTGRES_USER};"
+fi
+# Banco separado pra Evolution API (versões recentes exigem banco configurado, não rodam
+# mais sem persistência) — mesmo usuário, banco próprio.
+if ! sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname='evolution'" | grep -q 1; then
+  sudo -u postgres psql -c "CREATE DATABASE evolution OWNER ${POSTGRES_USER};"
+fi
+
+# A Evolution API roda em container Docker e precisa alcançar o Postgres do host via
+# host.docker.internal — isso resolve pro gateway da rede padrão do Docker (172.17.0.1) e da
+# rede própria do compose (172.18.0.1). Por padrão o Postgres só escuta em localhost.
+PG_CONF="/etc/postgresql/18/main/postgresql.conf"
+PG_HBA="/etc/postgresql/18/main/pg_hba.conf"
+if [ -f "$PG_CONF" ] && ! grep -q "172.17.0.1" "$PG_CONF"; then
+  sed -i "s/^#\?listen_addresses = .*/listen_addresses = 'localhost,172.17.0.1,172.18.0.1'\t\t# what IP address(es) to listen on;/" "$PG_CONF"
+fi
+if [ -f "$PG_HBA" ] && ! grep -q "172.17.0.0/16" "$PG_HBA"; then
+  echo "host    all             all             172.17.0.0/16           scram-sha-256" >> "$PG_HBA"
+  echo "host    all             all             172.18.0.0/16           scram-sha-256" >> "$PG_HBA"
+fi
+systemctl restart postgresql
 
 echo "═══ 4/9 — Instalando Nginx + Certbot ═══"
 apt install -y nginx certbot python3-certbot-nginx
@@ -67,8 +92,11 @@ else
 fi
 
 # Garante que o segredos.env real está na pasta vps/ dentro do repo clonado (caso o clone
-# tenha sobrescrito ou não tivesse a pasta ainda) — nunca vem do próprio Git.
-cp "$ARQUIVO_SEGREDOS" "${DIR_APP}/vps/segredos.env"
+# tenha sobrescrito ou não tivesse a pasta ainda) — nunca vem do próprio Git. Pula se já for
+# o mesmo arquivo (ex: quando o script é rodado direto de dentro do repo já clonado).
+if [ "$(readlink -f "$ARQUIVO_SEGREDOS")" != "$(readlink -f "${DIR_APP}/vps/segredos.env" 2>/dev/null || echo "")" ]; then
+  cp "$ARQUIVO_SEGREDOS" "${DIR_APP}/vps/segredos.env"
+fi
 
 echo "═══ 7/9 — Configurando variáveis de ambiente de produção ═══"
 # URL-encode da senha do Postgres para a connection string (caracteres reservados de URL)
@@ -94,19 +122,38 @@ EOF
 chmod 600 "${DIR_APP}/api/.env.production.local"
 chmod 600 "${DIR_APP}/vps/segredos.env"
 
+# .env do docker-compose da Evolution API — separado do .env.production.local porque o
+# docker-compose só lê variáveis de um .env na mesma pasta que ele, não do api/. Este arquivo
+# é lido pelo parser do docker-compose (não pelo bash), então os valores não precisam de aspas.
+cat > "${DIR_APP}/vps/.env" <<EOF
+EVOLUTION_API_KEY=${EVOLUTION_API_KEY}
+POSTGRES_USER=${POSTGRES_USER}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+EOF
+chmod 600 "${DIR_APP}/vps/.env"
+
 echo "═══ 8/9 — Build da aplicação + migração do banco + Evolution API ═══"
 cd "${DIR_APP}/api"
 npm ci
-npx prisma migrate deploy
+# O Prisma CLI (diferente do Next.js) não lê .env.production.local automaticamente — só
+# .env simples ou variável de ambiente já exportada. Exporta aqui só pra este comando.
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD_URL}@localhost:5432/${POSTGRES_DB}" npx prisma migrate deploy
 npm run build
 
 cd "${DIR_APP}/vps"
 docker compose up -d
 
 cd "${DIR_APP}/api"
-pm2 start npm --name pedefacil -- start -- -p "${PORTA_APP}"
+if pm2 describe pedefacil > /dev/null 2>&1; then
+  pm2 restart pedefacil
+else
+  pm2 start npm --name pedefacil -- start -- -p "${PORTA_APP}"
+fi
 pm2 save
-pm2 startup systemd -u root --hp /root | tail -1 | bash
+# Versões recentes do PM2 já configuram o systemd sozinhas (o log mostra o symlink sendo
+# criado); o "| tail -1 | bash" antigo às vezes captura uma linha vazia/formatada e quebra —
+# não é crítico (o processo já está rodando), então não deixa isso derrubar o script inteiro.
+pm2 startup systemd -u root --hp /root || true
 
 echo "═══ 9/9 — Configurando Nginx + HTTPS ═══"
 cat > /etc/nginx/sites-available/pedefacil <<EOF
@@ -136,7 +183,16 @@ certbot --nginx -d "${DOMINIO}" --non-interactive --agree-tos -m "${EMAIL_CERTBO
 echo "═══ Firewall ═══"
 ufw allow OpenSSH
 ufw allow 'Nginx Full'
+# Postgres só liberado pra rede interna do Docker (onde a Evolution API roda) — nunca pra
+# internet.
+ufw allow from 172.17.0.0/16 to any port 5432 proto tcp
+ufw allow from 172.18.0.0/16 to any port 5432 proto tcp
 ufw --force enable
+
+# A Evolution API sobe por último, depois do Postgres já aceitar conexão da rede do Docker e
+# do firewall já estar configurado — senão ela erra a primeira tentativa de migração.
+cd "${DIR_APP}/vps"
+docker compose restart
 
 echo ""
 echo "✅ Provisionamento concluído."

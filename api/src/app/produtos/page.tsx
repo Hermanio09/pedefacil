@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { SkeletonTable } from "../components/Skeleton";
-import { IconBox, IconSearch, IconTrash } from "../components/icons";
+import { IconBox, IconSearch, IconTrash, IconEdit } from "../components/icons";
 
 type Produto = {
   id: string; nome: string; unidade: string;
@@ -134,7 +134,9 @@ export default function ProdutosPage() {
                 <tbody>
                   {filtrados.map((p) => (
                     <tr key={p.id}>
-                      <td style={{ fontWeight: 600 }}>{p.nome}</td>
+                      <td style={{ fontWeight: 600 }}>
+                        <Link href={`/produtos/${p.id}/editar`} style={{ color: "inherit" }}>{p.nome}</Link>
+                      </td>
                       <td style={{ color: "var(--text-2)" }}>{p.fornecedor?.nome ?? "—"}</td>
                       <td><span className="badge badge-gray">{p.unidade}</span></td>
                       <td className={p.estoqueAbaixoMinimo ? "stock-warn" : "stock-ok"}>{p.estoqueAtual}</td>
@@ -152,7 +154,10 @@ export default function ProdutosPage() {
                           ? <span className="badge badge-alerta">⚠ Baixo</span>
                           : <span className="badge badge-ok">✓ OK</span>}
                       </td>
-                      <td style={{ textAlign: "right" }}>
+                      <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                        <Link href={`/produtos/${p.id}/editar`} className="btn btn-ghost btn-sm">
+                          <IconEdit size={13} /> Editar
+                        </Link>{" "}
                         <button
                           className="btn btn-ghost btn-sm"
                           onClick={() => excluir(p)}

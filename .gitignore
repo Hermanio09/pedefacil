@@ -13,6 +13,7 @@ node_modules/
 
 # Builds
 api/.next/
+api/tsconfig.tsbuildinfo
 mobile/.expo/
 mobile/dist/
 
