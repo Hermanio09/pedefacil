@@ -30,6 +30,10 @@ jobs:
         env:
           JWT_SECRET: build-check-dummy-secret-nao-e-usado-em-producao
           DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+          # Par de chaves VAPID descartável, só pra passar na validação de formato que a lib
+          # web-push faz ao carregar o módulo (src/lib/notify.ts) — não é usado em produção.
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: BGgyqez4bCug_TrvY2nt5vbAWkB7sO2dWdm492t0y7QyizIa52gCG4KYvXAZGQjeQ51gw5mbXjYwFux5hnj7GvE
+          VAPID_PRIVATE_KEY: Srskf8HWHoGw8fcD7v17QCd1YRuNYbCgx_7Jm-Vt0Rg
         run: npm run build
 
   # Só roda se build-check passar. Não recebe nenhuma senha/credencial de aplicação — só o
