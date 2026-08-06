@@ -22,6 +22,11 @@ services:
       - DATABASE_PROVIDER=postgresql
       - DATABASE_CONNECTION_URI=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@host.docker.internal:5432/evolution
       - DATABASE_SAVE_DATA_INSTANCE=true
+      # Sem Redis nesta VPS — versões recentes tentam usar por padrão e ficam gerando erro de
+      # "redis disconnected" sem parar, o que atrapalha o handshake de conexão do WhatsApp.
+      # Cache local substitui sem problema pro nosso volume de uso.
+      - CACHE_REDIS_ENABLED=false
+      - CACHE_LOCAL_ENABLED=true
       - STORE_MESSAGES=true
       - STORE_MESSAGE_UP=true
       - STORE_CONTACTS=false

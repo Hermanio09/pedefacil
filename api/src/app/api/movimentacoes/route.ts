@@ -43,9 +43,11 @@ export async function POST(req: NextRequest) {
         });
         if (atualizado.count === 0) throw new Error("ESTOQUE_INSUFICIENTE");
       } else {
+        // Entrada de estoque — presume que atende um pedido de reposição pendente, então
+        // limpa a marca de "pedido enviado" pra esse produto poder ser pedido de novo no futuro.
         await tx.produto.updateMany({
           where: { id: produtoId, empresaId: session.empresaId },
-          data:  { estoqueAtual: { increment: delta } },
+          data:  { estoqueAtual: { increment: delta }, pedidoPendenteEm: null },
         });
       }
 

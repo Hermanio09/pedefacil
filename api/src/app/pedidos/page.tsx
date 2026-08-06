@@ -9,10 +9,20 @@ type Produto = {
   id: string; nome: string; unidade: string;
   estoqueAtual: number; estoqueMinimo: number;
   estoqueAbaixoMinimo: boolean;
+  pedidoPendenteEm: string | null;
   fornecedor: Fornecedor | null;
 };
 type ItemPedido  = { produto: Produto; quantidade: number };
 type GrupoPedido = { fornecedor: Fornecedor | null; itens: ItemPedido[] };
+
+function tempoDesde(data: string): string {
+  const ms = Date.now() - new Date(data).getTime();
+  const horas = Math.floor(ms / 3_600_000);
+  if (horas < 1)  return "há poucos minutos";
+  if (horas < 24) return `há ${horas}h`;
+  const dias = Math.floor(horas / 24);
+  return `há ${dias} dia${dias !== 1 ? "s" : ""}`;
+}
 
 type StatusEnvio = {
   fornecedorId:   string;
@@ -73,6 +83,7 @@ export default function PedidosPage() {
         itens: g.itens
           .filter((it) => (quantidades[it.produto.id] ?? 0) > 0)
           .map((it) => ({
+            produtoId:  it.produto.id,
             nome:       it.produto.nome,
             quantidade: quantidades[it.produto.id],
             unidade:    it.produto.unidade,
@@ -81,6 +92,14 @@ export default function PedidosPage() {
       .filter((p) => p.itens.length > 0);
 
     if (pedidos.length === 0) return;
+
+    const jaPedidos = grupos.some((g) => g.itens.some((it) => it.produto.pedidoPendenteEm));
+    if (jaPedidos) {
+      const confirmar = window.confirm(
+        "Alguns itens já têm um pedido enviado recentemente, ainda aguardando entrega. Enviar mesmo assim (pode duplicar o pedido)?"
+      );
+      if (!confirmar) return;
+    }
 
     setEnviando(true);
     setResultados(null);
@@ -246,7 +265,16 @@ export default function PedidosPage() {
                 <tbody>
                   {grupo.itens.map((it) => (
                     <tr key={it.produto.id}>
-                      <td style={{ fontWeight: 600 }}>{it.produto.nome}</td>
+                      <td style={{ fontWeight: 600 }}>
+                        {it.produto.nome}
+                        {it.produto.pedidoPendenteEm && (
+                          <div style={{ marginTop: 3 }}>
+                            <span className="badge badge-gray" style={{ fontSize: 11 }}>
+                              Pedido enviado {tempoDesde(it.produto.pedidoPendenteEm)}
+                            </span>
+                          </div>
+                        )}
+                      </td>
                       <td className="stock-warn">{it.produto.estoqueAtual} <span style={{ color: "var(--text-3)", fontSize: 12 }}>{it.produto.unidade}</span></td>
                       <td style={{ color: "var(--text-2)" }}>{it.produto.estoqueMinimo}</td>
                       <td>

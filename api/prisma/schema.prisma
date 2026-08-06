@@ -21,6 +21,7 @@ model Empresa {
   movimentacoes     Movimentacao[]
   pushSubscriptions PushSubscription[]
   notasFiscais      NotaFiscal[]
+  pedidos           Pedido[]
 
   @@map("empresas")
 }
@@ -66,6 +67,10 @@ model Produto {
   precoVenda    Float          @default(0) // preço de venda ao cliente final — só muda manualmente
   fornecedorId  String?
   criadoEm      DateTime       @default(now())
+  // Data do último pedido de reposição enviado ao fornecedor pra esse produto, enquanto ainda
+  // não chegou. Zerado automaticamente quando entra uma nova movimentação de entrada (o pedido
+  // presumivelmente foi atendido) — evita mandar pedido duplicado pro mesmo fornecedor.
+  pedidoPendenteEm DateTime?
 
   empresa       Empresa        @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   fornecedor    Fornecedor?    @relation(fields: [fornecedorId], references: [id], onDelete: SetNull)
@@ -107,6 +112,22 @@ model Movimentacao {
   produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
 
   @@map("movimentacoes")
+}
+
+model Pedido {
+  id             String   @id @default(cuid())
+  empresaId      String
+  fornecedorId   String
+  fornecedorNome String   // snapshot — sobrevive se o fornecedor for excluído depois
+  itens          String   // JSON: [{ produtoId, nome, quantidade, unidade }]
+  whatsapp       String?  // enviado | falhou | sem_numero
+  email          String?  // enviado | falhou | sem_email
+  enviadoPorNome String
+  criadoEm       DateTime @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@map("pedidos")
 }
 
 model NotaFiscal {

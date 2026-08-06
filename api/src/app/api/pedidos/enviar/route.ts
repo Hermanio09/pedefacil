@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 // ─── tipos ───────────────────────────────────────────────────────────────────
 
 type ItemPedido = {
+  produtoId: string;
   nome: string;
   quantidade: number;
   unidade: string;
@@ -178,6 +179,31 @@ export async function POST(req: NextRequest) {
         }
       } else {
         resultado.email = "sem_email";
+      }
+
+      // Registra o pedido no histórico e marca os produtos como "aguardando entrega" —
+      // só se algum canal realmente confirmou o envio, pra não esconder itens que falharam.
+      if (resultado.whatsapp === "enviado" || resultado.email === "enviado") {
+        const itens = pedido.itens ?? [];
+        await db.pedido.create({
+          data: {
+            empresaId:      session.empresaId,
+            fornecedorId:   fornecedor.id,
+            fornecedorNome: fornecedor.nome,
+            itens:          JSON.stringify(itens),
+            whatsapp:       resultado.whatsapp,
+            email:          resultado.email,
+            enviadoPorNome: session.nome,
+          },
+        });
+
+        const produtoIds = itens.map((it) => it.produtoId).filter(Boolean);
+        if (produtoIds.length > 0) {
+          await db.produto.updateMany({
+            where: { id: { in: produtoIds }, empresaId: session.empresaId },
+            data:  { pedidoPendenteEm: new Date() },
+          });
+        }
       }
 
       return resultado;

@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
           }),
           db.produto.update({
             where: { id: produtoId! },
-            data:  { estoqueAtual: { increment: quantidade } },
+            data:  { estoqueAtual: { increment: quantidade }, pedidoPendenteEm: null },
           }),
         ]);
         criados++;
