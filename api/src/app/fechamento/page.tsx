@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { IconCheckCircle, IconAlertTriangle } from "../components/icons";
+import { IconCheckCircle, IconAlertTriangle, IconSearch } from "../components/icons";
 import { SkeletonTable } from "../components/Skeleton";
 
 type Produto  = { id: string; nome: string; unidade: string; estoqueAtual: number; estoqueMinimo: number };
@@ -13,6 +13,7 @@ export default function FechamentoPage() {
   const [loading, setLoading]       = useState(true);
   const [salvando, setSalvando]     = useState(false);
   const [resultado, setResultado]   = useState<{ resultados: Resultado[]; alertas: string[] } | null>(null);
+  const [busca, setBusca]           = useState("");
 
   useEffect(() => {
     fetch("/api/produtos")
@@ -40,6 +41,9 @@ export default function FechamentoPage() {
   };
 
   const preenchidos = itens.filter((i) => i.contado !== "").length;
+  const itensFiltrados = busca.trim()
+    ? itens.filter((i) => i.produto.nome.toLowerCase().includes(busca.trim().toLowerCase()))
+    : itens;
 
   if (loading) return (
     <>
@@ -146,8 +150,29 @@ export default function FechamentoPage() {
               </div>
             </div>
 
+            <div style={{ padding: "0 24px 16px" }}>
+              <div className="input-wrap">
+                <span style={{ position: "absolute", left: 13, top: "50%", transform: "translateY(-50%)", color: "var(--text-3)", pointerEvents: "none", display: "flex" }}>
+                  <IconSearch size={15} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Buscar produto…"
+                  value={busca}
+                  onChange={(e) => setBusca(e.target.value)}
+                  style={{ paddingLeft: 34 }}
+                />
+              </div>
+            </div>
+
+            {busca.trim() && itensFiltrados.length === 0 && (
+              <div style={{ padding: "0 24px 16px", color: "var(--text-3)", fontSize: 13 }}>
+                Nenhum produto encontrado com esse nome.
+              </div>
+            )}
+
             <div style={{ padding: "0 24px" }}>
-              {itens.map((item) => {
+              {itensFiltrados.map((item) => {
                 const contado    = item.contado !== "" ? Number(item.contado) : null;
                 const diferenca  = contado !== null ? contado - item.produto.estoqueAtual : null;
 
