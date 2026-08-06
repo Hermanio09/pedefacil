@@ -9,6 +9,7 @@ type Produto = {
   estoqueAtual: number; estoqueMinimo: number; estoqueAbaixoMinimo: boolean;
   fornecedor: { id: string; nome: string } | null;
   precoUnitario?: number;
+  precoVenda?: number;
 };
 
 const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -126,6 +127,7 @@ export default function ProdutosPage() {
                     <th>Estoque Atual</th>
                     <th>Mín. Alerta</th>
                     {podeVerValores && <th>Valor Unit.</th>}
+                    {podeVerValores && <th>Preço de Venda</th>}
                     {podeVerValores && <th>Valor em Estoque</th>}
                     <th>Status</th>
                     <th></th>
@@ -143,6 +145,9 @@ export default function ProdutosPage() {
                       <td style={{ color: "var(--text-2)" }}>{p.estoqueMinimo}</td>
                       {podeVerValores && (
                         <td style={{ color: "var(--text-2)" }}>{p.precoUnitario ? fmt(p.precoUnitario) : "—"}</td>
+                      )}
+                      {podeVerValores && (
+                        <td style={{ color: "var(--text-2)" }}>{p.precoVenda ? fmt(p.precoVenda) : "—"}</td>
                       )}
                       {podeVerValores && (
                         <td style={{ fontWeight: 700, color: "var(--primary)" }}>
