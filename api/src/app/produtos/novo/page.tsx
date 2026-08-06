@@ -133,7 +133,7 @@ export default function NovoProdutoPage() {
 
               <div className="form-row">
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label>Preço de Custo <span style={{ fontWeight: 400, color: "var(--text-3)" }}>(opcional)</span></label>
+                  <label>Preço de Compra <span style={{ fontWeight: 400, color: "var(--text-3)" }}>(opcional)</span></label>
                   <div className="input-wrap">
                     <input
                       type="number" min="0" step="0.01" placeholder="0,00"

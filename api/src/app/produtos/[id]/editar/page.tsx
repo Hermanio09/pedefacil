@@ -104,7 +104,7 @@ export default function EditarProdutoPage() {
                 </div>
                 {podeVerPreco && (
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label>Preço de Custo</label>
+                    <label>Preço de Compra</label>
                     <div className="input-wrap">
                       <span className="input-suffix" style={{ left: 10, right: "auto" }}>R$</span>
                       <input type="number" min="0" step="0.01" value={precoUnitario} onChange={(e) => setPrecoUnitario(e.target.value)} style={{ paddingLeft: 36 }} />
