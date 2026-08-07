@@ -18,7 +18,7 @@ export default function AppleIcon() {
       }}
     >
       <div style={{ fontSize: 100, lineHeight: 1 }}>🌿</div>
-      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "system-ui" }}>PedeFacil</div>
+      <div style={{ fontSize: 22, fontWeight: 800, color: "#fff", fontFamily: "system-ui" }}>StockFacil</div>
     </div>,
     { ...size }
   );

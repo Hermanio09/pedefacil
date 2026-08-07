@@ -42,7 +42,7 @@ export default function SetupPage() {
         <div style={{ textAlign: "center", marginBottom: 32 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🌿</div>
           <div style={{ fontSize: 26, fontWeight: 800, color: "var(--text-1)" }}>
-            Pede<span style={{ color: "var(--primary)" }}>Facil</span>
+            Stock<span style={{ color: "var(--primary)" }}>Facil</span>
           </div>
           <div style={{ fontSize: 14, color: "var(--text-3)", marginTop: 4 }}>Configuração inicial — crie sua conta</div>
         </div>

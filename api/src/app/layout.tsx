@@ -4,17 +4,17 @@ import AppWrapper from "./components/AppWrapper";
 import PWARegister from "./components/PWARegister";
 
 export const metadata: Metadata = {
-  title:       "PedeFacil — Controle de Estoque",
+  title:       "StockFacil — Controle de Estoque",
   description: "Controle inteligente de estoque para pequenos negócios",
   manifest:    "/manifest.webmanifest",
   appleWebApp: {
     capable:           true,
     statusBarStyle:    "default",
-    title:             "PedeFacil",
+    title:             "StockFacil",
   },
   formatDetection: { telephone: false },
   openGraph: {
-    title:       "PedeFacil",
+    title:       "StockFacil",
     description: "Controle de estoque para pequenos negócios",
     type:        "website",
   },
@@ -41,7 +41,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="PedeFacil" />
+        <meta name="apple-mobile-web-app-title" content="StockFacil" />
         {/* Aplica o tema salvo antes da página pintar, evitando flash da cor errada */}
         <script
           dangerouslySetInnerHTML={{

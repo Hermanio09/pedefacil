@@ -139,7 +139,7 @@ export default function PWARegister() {
             whiteSpace:   "nowrap",
           }}
         >
-          <IconDownload size={15} /> Instalar PedeFacil
+          <IconDownload size={15} /> Instalar StockFacil
         </button>
       )}
 

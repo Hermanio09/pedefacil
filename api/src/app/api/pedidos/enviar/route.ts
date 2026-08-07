@@ -50,7 +50,7 @@ function formatarMensagem(fornecedorNome: string, itensPedido: ItemPedido[]): st
     `Olá ${fornecedorNome}! 🛒\n\n` +
     `Segue nosso pedido de reposição:\n\n${itens}\n\n` +
     `Data: ${data}\n` +
-    `Sistema: PedeFacil\n\n` +
+    `Sistema: StockFacil\n\n` +
     `Por favor confirme o recebimento. Obrigado!`
   );
 }
@@ -100,7 +100,7 @@ async function enviarEmail(destinatario: string, fornecedorNome: string, mensage
   });
 
   await transporter.sendMail({
-    from: `PedeFacil <${from}>`,
+    from: `StockFacil <${from}>`,
     to: destinatario,
     subject: `Pedido de Reposição — ${new Date().toLocaleDateString("pt-BR")}`,
     text: mensagem,

@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "PedeFacil — Controle de Estoque",
-    short_name: "PedeFacil",
+    name: "StockFacil — Controle de Estoque",
+    short_name: "StockFacil",
     description: "Controle inteligente de estoque para pequenos negócios",
     start_url: "/",
     display: "standalone",

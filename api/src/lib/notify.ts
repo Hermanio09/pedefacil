@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import webpush from "web-push";
 
 webpush.setVapidDetails(
-  "mailto:suporte@pedefacil.com.br",
+  "mailto:suporte@stockfacil.com.br",
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "",
   process.env.VAPID_PRIVATE_KEY            ?? ""
 );

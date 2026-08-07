@@ -42,7 +42,7 @@ export default function Dashboard() {
     const linhas = precisaPedido
       .map((p) => `• ${p.nome}: ${p.estoqueAtual} ${p.unidade} (mín: ${p.estoqueMinimo})`)
       .join("\n");
-    const msg = `⚠ Alerta de estoque baixo — PedeFacil\n\n${linhas}\n\nPor favor, providenciar reposição.`;
+    const msg = `⚠ Alerta de estoque baixo — StockFacil\n\n${linhas}\n\nPor favor, providenciar reposição.`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
   };
 

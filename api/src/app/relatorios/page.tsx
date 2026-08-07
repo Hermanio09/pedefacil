@@ -38,7 +38,7 @@ async function gerarPDF(
   doc.setFillColor(5, 150, 105);
   doc.rect(0, 0, W, 28, "F");
   doc.setFontSize(20); doc.setFont("helvetica", "bold"); doc.setTextColor(255, 255, 255);
-  doc.text("PedeFacil", 14, 13);
+  doc.text("StockFacil", 14, 13);
   doc.setFontSize(11); doc.setFont("helvetica", "normal");
   doc.text(titulo, 14, 21);
   doc.setFontSize(11);
@@ -86,16 +86,16 @@ async function gerarPDF(
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     doc.setFontSize(8); doc.setTextColor(...cinza);
-    doc.text(`PedeFacil · Relatório gerado automaticamente · Página ${i}/${pages}`, W / 2, 290, { align: "center" });
+    doc.text(`StockFacil · Relatório gerado automaticamente · Página ${i}/${pages}`, W / 2, 290, { align: "center" });
   }
 
   const blob     = doc.output("blob");
-  const fileName = `relatorio-pedefacil-${titulo.toLowerCase().replace(/\s+/g, "-")}.pdf`;
+  const fileName = `relatorio-stockfacil-${titulo.toLowerCase().replace(/\s+/g, "-")}.pdf`;
   const file     = new File([blob], fileName, { type: "application/pdf" });
 
   const isMobileDevice = /Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
   if (onShare && isMobileDevice && navigator.share && navigator.canShare?.({ files: [file] })) {
-    await navigator.share({ title: `PedeFacil — ${titulo}`, files: [file] });
+    await navigator.share({ title: `StockFacil — ${titulo}`, files: [file] });
   } else {
     const url = URL.createObjectURL(blob);
     const a   = document.createElement("a");

@@ -44,7 +44,7 @@ export default function LoginPage() {
             🌿
           </div>
           <div style={{ fontSize: 30, fontWeight: 800, color: "#fff", letterSpacing: "-0.5px" }}>
-            Pede<span style={{
+            Stock<span style={{
               background: "linear-gradient(135deg, #6ee7b7, #34d399)",
               WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent",
             }}>Facil</span>
@@ -83,7 +83,7 @@ export default function LoginPage() {
         </div>
 
         <div style={{ textAlign: "center", marginTop: 20, fontSize: 12, color: "#6d8579" }}>
-          PedeFacil v1.0 · Beta
+          StockFacil v1.0 · Beta
         </div>
       </div>
     </div>

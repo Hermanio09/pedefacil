@@ -75,7 +75,7 @@ export default function Sidebar() {
       <aside className={`sidebar ${open ? "open" : ""}`}>
         <div className="sidebar-logo">
           <div className="logo-mark">🌿</div>
-          <div className="logo-name">Pede<span>Facil</span></div>
+          <div className="logo-name">Stock<span>Facil</span></div>
         </div>
 
         {me && (
@@ -123,7 +123,7 @@ export default function Sidebar() {
           >
             <IconLogout size={15} /> Sair
           </button>
-          <div style={{ fontSize: 11, color: "var(--sidebar-text-dim)", textAlign: "center" }}>PedeFacil v1.0 · Beta</div>
+          <div style={{ fontSize: 11, color: "var(--sidebar-text-dim)", textAlign: "center" }}>StockFacil v1.0 · Beta</div>
         </div>
       </aside>
     </>
