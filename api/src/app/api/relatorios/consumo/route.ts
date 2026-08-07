@@ -17,8 +17,14 @@ export async function GET(req: NextRequest) {
   const saidas = await db.movimentacao.findMany({
     where: {
       empresaId: session.empresaId,
-      tipo:      { in: ["saida", "ajuste"] },
+      revertida: false,
       criadoEm:  { gte: inicio, lte: fim },
+      // "ajuste" pode ir em qualquer direção — só conta como consumo quando de fato tirou
+      // estoque (uma contagem de fechamento que ACRESCENTA estoque não é consumo).
+      OR: [
+        { tipo: "saida" },
+        { tipo: "ajuste", estoquePositivo: false },
+      ],
     },
     include: {
       produto: { select: { nome: true, unidade: true, precoUnitario: true } },

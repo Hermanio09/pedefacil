@@ -11,7 +11,7 @@ export async function GET() {
 
   const [produtos, movsHoje] = await Promise.all([
     db.produto.findMany({ where: { empresaId: session.empresaId } }),
-    db.movimentacao.findMany({ where: { empresaId: session.empresaId, criadoEm: { gte: hoje } } }),
+    db.movimentacao.findMany({ where: { empresaId: session.empresaId, criadoEm: { gte: hoje }, revertida: false } }),
   ]);
 
   return NextResponse.json({

@@ -27,6 +27,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   if (role !== undefined && !ROLES_VALIDOS.includes(role))
     return NextResponse.json({ error: "Role inválido." }, { status: 400 });
 
+  if (email) {
+    const existente = await db.usuario.findUnique({ where: { email: email.toLowerCase() } });
+    if (existente && existente.id !== id) return NextResponse.json({ error: "E-mail já cadastrado." }, { status: 409 });
+  }
+
   const data: Record<string, unknown> = { nome, email: email?.toLowerCase(), role, ativo };
   if (senha && senha.length >= 6) data.senha = await bcrypt.hash(senha, 10);
 

@@ -24,14 +24,14 @@ export async function GET(req: NextRequest) {
   const valorEstoque = produtos.reduce((acc, p) => acc + p.estoqueAtual * p.precoUnitario, 0);
 
   const entradasMes = await db.movimentacao.findMany({
-    where:   { empresaId: session.empresaId, tipo: "entrada", criadoEm: { gte: inicioMes, lte: fimMes } },
+    where:   { empresaId: session.empresaId, tipo: "entrada", criadoEm: { gte: inicioMes, lte: fimMes }, revertida: false },
     include: { produto: { select: { nome: true, unidade: true } } },
   });
 
   const custoMes = entradasMes.reduce((acc, m) => acc + m.quantidade * m.precoUnitario, 0);
 
   const saidasMes = await db.movimentacao.findMany({
-    where:   { empresaId: session.empresaId, tipo: "saida", criadoEm: { gte: inicioMes, lte: fimMes } },
+    where:   { empresaId: session.empresaId, tipo: "saida", criadoEm: { gte: inicioMes, lte: fimMes }, revertida: false },
     include: { produto: { select: { nome: true, unidade: true } } },
   });
 

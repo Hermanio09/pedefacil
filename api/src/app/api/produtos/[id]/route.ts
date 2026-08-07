@@ -60,6 +60,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  if (session.role === "operador") return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
   const { id } = await params;
 
   await db.produto.deleteMany({ where: { id, empresaId: session.empresaId } });

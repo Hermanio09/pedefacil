@@ -22,7 +22,7 @@ export default function FornecedoresPage() {
   const [carregandoProd, setCarregandoProd] = useState<Set<string>>(new Set());
 
   const carregar = () =>
-    fetch("/api/fornecedores").then((r) => r.json()).then((d) => { setFornecedores(d); setLoading(false); });
+    fetch("/api/fornecedores").then((r) => (r.ok ? r.json() : [])).then((d) => { setFornecedores(d); setLoading(false); });
 
   useEffect(() => { carregar(); }, []);
 

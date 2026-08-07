@@ -12,7 +12,7 @@ export async function GET() {
   ha14.setHours(0, 0, 0, 0);
 
   const movs = await db.movimentacao.findMany({
-    where:   { empresaId: session.empresaId, criadoEm: { gte: ha14 } },
+    where:   { empresaId: session.empresaId, criadoEm: { gte: ha14 }, revertida: false },
     include: { produto: { select: { nome: true } } },
     orderBy: { criadoEm: "asc" },
   });

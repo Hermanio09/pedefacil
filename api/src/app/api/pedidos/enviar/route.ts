@@ -145,7 +145,8 @@ export async function POST(req: NextRequest) {
         };
       }
 
-      const mensagem = formatarMensagem(fornecedor.nome, pedido.itens ?? []);
+      const itensValidos = Array.isArray(pedido.itens) ? pedido.itens : [];
+      const mensagem = formatarMensagem(fornecedor.nome, itensValidos);
       const resultado: ResultadoEnvio = {
         fornecedorId:   fornecedor.id,
         fornecedorNome: fornecedor.nome,
@@ -183,26 +184,32 @@ export async function POST(req: NextRequest) {
 
       // Registra o pedido no histórico e marca os produtos como "aguardando entrega" —
       // só se algum canal realmente confirmou o envio, pra não esconder itens que falharam.
+      // Em try/catch: a mensagem já foi enviada de verdade nesse ponto, então uma falha aqui
+      // não pode virar erro 500 pro cliente (isso o levaria a clicar em enviar de novo e
+      // duplicar o pedido pro fornecedor por causa de uma falha só no registro interno).
       if (resultado.whatsapp === "enviado" || resultado.email === "enviado") {
-        const itens = pedido.itens ?? [];
-        await db.pedido.create({
-          data: {
-            empresaId:      session.empresaId,
-            fornecedorId:   fornecedor.id,
-            fornecedorNome: fornecedor.nome,
-            itens:          JSON.stringify(itens),
-            whatsapp:       resultado.whatsapp,
-            email:          resultado.email,
-            enviadoPorNome: session.nome,
-          },
-        });
-
-        const produtoIds = itens.map((it) => it.produtoId).filter(Boolean);
-        if (produtoIds.length > 0) {
-          await db.produto.updateMany({
-            where: { id: { in: produtoIds }, empresaId: session.empresaId },
-            data:  { pedidoPendenteEm: new Date() },
+        try {
+          await db.pedido.create({
+            data: {
+              empresaId:      session.empresaId,
+              fornecedorId:   fornecedor.id,
+              fornecedorNome: fornecedor.nome,
+              itens:          JSON.stringify(itensValidos),
+              whatsapp:       resultado.whatsapp,
+              email:          resultado.email,
+              enviadoPorNome: session.nome,
+            },
           });
+
+          const produtoIds = itensValidos.map((it) => it.produtoId).filter(Boolean);
+          if (produtoIds.length > 0) {
+            await db.produto.updateMany({
+              where: { id: { in: produtoIds }, empresaId: session.empresaId },
+              data:  { pedidoPendenteEm: new Date() },
+            });
+          }
+        } catch (e) {
+          console.error("Erro ao registrar histórico do pedido (mensagem já foi enviada):", e);
         }
       }
 

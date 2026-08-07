@@ -18,6 +18,7 @@ export async function GET(req: NextRequest) {
     where: {
       empresaId: session.empresaId,
       criadoEm:  { gte: inicio, lte: fim },
+      revertida: false,
     },
     include: {
       produto: { select: { nome: true, unidade: true, precoUnitario: true } },

@@ -13,7 +13,16 @@ export async function GET() {
     include: { fornecedor: { select: { id: true, nome: true, telefone: true, email: true } } },
   });
 
-  const resultado = produtos.map((p) => ({ ...p, estoqueAbaixoMinimo: p.estoqueAtual <= p.estoqueMinimo }));
+  // Contato do fornecedor (telefone/e-mail) é restrito a quem pode acessar /api/fornecedores —
+  // sem isso, um operador via GET /api/produtos via os mesmos dados que a API de fornecedores
+  // já bloqueia diretamente para o papel dele.
+  const resultado = produtos.map((p) => ({
+    ...p,
+    estoqueAbaixoMinimo: p.estoqueAtual <= p.estoqueMinimo,
+    fornecedor: p.fornecedor && !podeVerFinanceiro(session.role)
+      ? { id: p.fornecedor.id, nome: p.fornecedor.nome, telefone: null, email: null }
+      : p.fornecedor,
+  }));
   return NextResponse.json(ocultarPrecoLista(resultado, session.role));
 }
 

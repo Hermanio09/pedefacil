@@ -127,7 +127,8 @@ export async function POST(req: NextRequest) {
           });
         }
 
-        const quantidade = Number(item.quantidade) || 1;
+        const quantidadeBruta = Number(item.quantidade);
+        const quantidade = quantidadeBruta > 0 ? quantidadeBruta : 1;
         await db.$transaction([
           db.movimentacao.create({
             data: {

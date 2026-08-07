@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
       tipo:       "ajuste",
       observacao: { contains: "Fechamento" },
       criadoEm:   { gte: inicio, lte: fim },
+      revertida:  false,
     },
     include: { produto: { select: { nome: true, unidade: true } } },
     orderBy: { criadoEm: "desc" },
@@ -37,7 +38,9 @@ export async function GET(req: NextRequest) {
     if (!diasMap.has(dia)) diasMap.set(dia, { data: dia, itens: [], total: 0 });
     const entry = diasMap.get(dia)!;
     entry.itens.push({ produto: a.produto.nome, unidade: a.produto.unidade, quantidade: a.quantidade, observacao: a.observacao });
-    entry.total += a.quantidade;
+    // Direção importa: um ajuste pode somar (contagem achou mais) ou subtrair (achou menos)
+    // estoque — sem isso, um +10 e um -10 no mesmo dia viravam "total: 20" em vez de 0.
+    entry.total += a.estoquePositivo ? a.quantidade : -a.quantidade;
   }
 
   const dias = Array.from(diasMap.values()).sort((a, b) => b.data.localeCompare(a.data));

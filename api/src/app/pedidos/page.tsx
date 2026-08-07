@@ -39,35 +39,34 @@ export default function PedidosPage() {
   const [enviando,    setEnviando]    = useState(false);
   const [resultados,  setResultados]  = useState<StatusEnvio[] | null>(null);
 
-  useEffect(() => {
-    fetch("/api/produtos")
-      .then((r) => r.json())
-      .then((produtos: Produto[]) => {
-        const emAlerta = produtos.filter((p) => p.estoqueAbaixoMinimo);
-        const mapa = new Map<string, GrupoPedido>();
+  const carregar = async () => {
+    const produtos: Produto[] = await fetch("/api/produtos").then((r) => r.json());
+    const emAlerta = produtos.filter((p) => p.estoqueAbaixoMinimo);
+    const mapa = new Map<string, GrupoPedido>();
 
-        for (const p of emAlerta) {
-          const chave = p.fornecedor?.id ?? "__sem_fornecedor__";
-          if (!mapa.has(chave)) mapa.set(chave, { fornecedor: p.fornecedor, itens: [] });
-          const qtdSugerida = Math.max(p.estoqueMinimo - p.estoqueAtual, 1);
-          mapa.get(chave)!.itens.push({ produto: p, quantidade: qtdSugerida });
-        }
+    for (const p of emAlerta) {
+      const chave = p.fornecedor?.id ?? "__sem_fornecedor__";
+      if (!mapa.has(chave)) mapa.set(chave, { fornecedor: p.fornecedor, itens: [] });
+      const qtdSugerida = Math.max(p.estoqueMinimo - p.estoqueAtual, 1);
+      mapa.get(chave)!.itens.push({ produto: p, quantidade: qtdSugerida });
+    }
 
-        const lista = Array.from(mapa.values()).sort((a, b) => {
-          if (!a.fornecedor) return 1;
-          if (!b.fornecedor) return -1;
-          return a.fornecedor.nome.localeCompare(b.fornecedor.nome);
-        });
+    const lista = Array.from(mapa.values()).sort((a, b) => {
+      if (!a.fornecedor) return 1;
+      if (!b.fornecedor) return -1;
+      return a.fornecedor.nome.localeCompare(b.fornecedor.nome);
+    });
 
-        setGrupos(lista);
-        const qtds: Record<string, number> = {};
-        for (const g of lista)
-          for (const it of g.itens)
-            qtds[it.produto.id] = it.quantidade;
-        setQuantidades(qtds);
-        setLoading(false);
-      });
-  }, []);
+    setGrupos(lista);
+    const qtds: Record<string, number> = {};
+    for (const g of lista)
+      for (const it of g.itens)
+        qtds[it.produto.id] = it.quantidade;
+    setQuantidades(qtds);
+    setLoading(false);
+  };
+
+  useEffect(() => { carregar(); }, []);
 
   const setQtd = (id: string, v: number) =>
     setQuantidades((prev) => ({ ...prev, [id]: v }));
@@ -93,7 +92,13 @@ export default function PedidosPage() {
 
     if (pedidos.length === 0) return;
 
-    const jaPedidos = grupos.some((g) => g.itens.some((it) => it.produto.pedidoPendenteEm));
+    // Só considera duplicidade pros itens que realmente vão nesse envio (com quantidade > 0),
+    // não em todos os grupos carregados — senão um item parado (qtd zerada) ou o grupo "sem
+    // fornecedor" (que nunca é enviado) dispararia um aviso de duplicidade falso.
+    const produtoIdsDoEnvio = new Set(pedidos.flatMap((p) => p.itens.map((it) => it.produtoId)));
+    const jaPedidos = grupos.some((g) =>
+      g.itens.some((it) => produtoIdsDoEnvio.has(it.produto.id) && it.produto.pedidoPendenteEm)
+    );
     if (jaPedidos) {
       const confirmar = window.confirm(
         "Alguns itens já têm um pedido enviado recentemente, ainda aguardando entrega. Enviar mesmo assim (pode duplicar o pedido)?"
@@ -111,6 +116,9 @@ export default function PedidosPage() {
     const data = await res.json();
     setResultados(data.resultados ?? []);
     setEnviando(false);
+    // Recarrega — sem isso, `pedidoPendenteEm` fica desatualizado em memória e tanto o selo
+    // visual quanto a checagem de duplicidade acima ficam sem efeito até o usuário dar F5.
+    await carregar();
   };
 
   const totalItens = grupos.reduce((acc, g) => acc + g.itens.length, 0);

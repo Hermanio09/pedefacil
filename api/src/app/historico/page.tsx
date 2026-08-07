@@ -27,7 +27,8 @@ export default function HistoricoPage() {
   const carregar = useCallback(async (p: number) => {
     setLoading(true);
     const params = new URLSearchParams({ de, ate, tipo, page: String(p) });
-    const data = await fetch(`/api/historico?${params}`).then((r) => r.json());
+    const res  = await fetch(`/api/historico?${params}`);
+    const data = res.ok ? await res.json() : { movimentacoes: [], total: 0, paginas: 1 };
     setMovs(data.movimentacoes);
     setTotal(data.total);
     setPaginas(data.paginas);

@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
       empresaId: session.empresaId,
       tipo:      "entrada",
       criadoEm:  { gte: inicio, lte: fim },
+      revertida: false,
     },
     include: {
       produto: {

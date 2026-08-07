@@ -21,7 +21,7 @@ export default function NovoProdutoPage() {
   const [erro, setErro]                   = useState("");
 
   useEffect(() => {
-    fetch("/api/fornecedores").then((r) => r.json()).then(setFornecedores);
+    fetch("/api/fornecedores").then((r) => (r.ok ? r.json() : [])).then(setFornecedores);
   }, []);
 
   const salvar = async (e: React.FormEvent) => {

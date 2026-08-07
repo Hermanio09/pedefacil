@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     where.criadoEm = criadoEm;
   }
   if (fornecedor) {
-    where.fornecedorNome = { contains: fornecedor };
+    where.fornecedorNome = { contains: fornecedor, mode: "insensitive" };
   }
   if (tipo && tipo !== "todos") {
     where.tipo = tipo;

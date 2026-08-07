@@ -25,7 +25,7 @@ export default function EditarProdutoPage() {
   useEffect(() => {
     Promise.all([
       fetch(`/api/produtos/${id}`).then((r) => r.json()),
-      fetch("/api/fornecedores").then((r) => r.json()),
+      fetch("/api/fornecedores").then((r) => (r.ok ? r.json() : [])),
       fetch("/api/auth/me").then((r) => r.ok ? r.json() : null),
     ]).then(([p, fs, me]) => {
       setNome(p.nome ?? "");
