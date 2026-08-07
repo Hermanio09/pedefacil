@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { IconTruck, IconSmartphone, IconMail, IconCheckCircle, IconArrowUpCircle, IconAlertTriangle, IconInbox } from "../components/icons";
+import { IconTruck, IconSmartphone, IconMail, IconCheckCircle, IconArrowUpCircle, IconAlertTriangle } from "../components/icons";
 import { SkeletonTable } from "../components/Skeleton";
 
 type Fornecedor = { id: string; nome: string; telefone: string | null; email: string | null };
@@ -124,7 +124,6 @@ export default function PedidosPage() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <Link href="/pedidos/solicitados" className="btn btn-secondary btn-sm"><IconInbox size={14} /> Solicitados</Link>
           <Link href="/pedidos/historico" className="btn btn-secondary btn-sm"><IconCheckCircle size={14} /> Histórico</Link>
           <Link href="/fornecedores" className="btn btn-secondary btn-sm"><IconTruck size={14} /> Fornecedores</Link>
         </div>

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import ThemeToggle from "./ThemeToggle";
 import {
   IconGrid, IconBox, IconArrowDownCircle, IconArrowUpCircle, IconReceipt, IconArchive,
-  IconTruck, IconClipboardList, IconCheckCircle, IconCalendar, IconChartBar, IconUsers, IconLogout,
+  IconTruck, IconClipboardList, IconInbox, IconCheckCircle, IconCalendar, IconChartBar, IconUsers, IconLogout,
 } from "./icons";
 
 type Me = { userId: string; nome: string; email: string; role: string } | null;
@@ -28,6 +28,7 @@ const navBase = [
   { href: "/notas-fiscais", label: "Notas Lançadas", icon: IconArchive,      roles: ["admin","gerente"] },
   { href: "/fornecedores", label: "Fornecedores", icon: IconTruck,           roles: ["admin","gerente"] },
   { href: "/pedidos",      label: "Pedidos",      icon: IconClipboardList,   roles: ["admin","gerente"] },
+  { href: "/pedidos/solicitados", label: "Solicitados", icon: IconInbox,     roles: ["admin","gerente"] },
   { href: "/fechamento",   label: "Fechamento",   icon: IconCheckCircle,     roles: ["admin","gerente","operador"] },
   { href: "/historico",    label: "Histórico",    icon: IconCalendar,        roles: ["admin","gerente"] },
   { href: "/relatorios",   label: "Relatórios",   icon: IconChartBar,        roles: ["admin","gerente"] },
