@@ -8,10 +8,13 @@ export async function GET(req: NextRequest) {
   if (session.role === "operador") return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
   const { searchParams } = req.nextUrl;
-  const mes = searchParams.get("mes");
+  const mesParam = searchParams.get("mes");
 
-  const agora  = new Date();
-  const anoMes = mes ?? `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
+  const agora = new Date();
+  // Só aceita o formato "YYYY-MM" — qualquer outra coisa (?mes=abc, ?mes=2026-13) cai no
+  // mês atual em vez de virar uma Invalid Date que quebra a query do Prisma com erro 500.
+  const mesValido = mesParam && /^\d{4}-(0[1-9]|1[0-2])$/.test(mesParam) ? mesParam : null;
+  const anoMes = mesValido ?? `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, "0")}`;
   const [ano, m] = anoMes.split("-").map(Number);
   const inicioMes = new Date(ano, m - 1, 1);
   const fimMes    = new Date(ano, m, 0, 23, 59, 59);

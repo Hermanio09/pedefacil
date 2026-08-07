@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { parseDataParam } from "@/lib/query-params";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -8,11 +9,9 @@ export async function GET(req: NextRequest) {
   if (session.role === "operador") return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
   const { searchParams } = req.nextUrl;
-  const de  = searchParams.get("de");
-  const ate = searchParams.get("ate");
 
-  const inicio = de  ? new Date(de  + "T00:00:00") : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
-  const fim    = ate ? new Date(ate + "T23:59:59") : new Date();
+  const inicio = parseDataParam(searchParams.get("de"),  "inicio") ?? new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+  const fim    = parseDataParam(searchParams.get("ate"), "fim")    ?? new Date();
 
   const ajustes = await db.movimentacao.findMany({
     where: {

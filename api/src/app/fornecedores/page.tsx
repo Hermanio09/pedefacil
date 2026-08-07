@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Link from "next/link";
 import { IconTruck, IconReceipt, IconSmartphone, IconMail, IconEdit, IconTrash } from "../components/icons";
 import { SkeletonTable } from "../components/Skeleton";
@@ -98,8 +98,8 @@ export default function FornecedoresPage() {
                     const lista    = produtos[f.id] ?? [];
 
                     return (
-                      <>
-                        <tr key={f.id}>
+                      <Fragment key={f.id}>
+                        <tr>
                           {/* seta expansível */}
                           <td>
                             <button
@@ -193,7 +193,7 @@ export default function FornecedoresPage() {
                             </td>
                           </tr>
                         )}
-                      </>
+                      </Fragment>
                     );
                   })}
                 </tbody>

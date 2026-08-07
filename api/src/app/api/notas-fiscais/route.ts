@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { parseDataParam } from "@/lib/query-params";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -8,8 +9,8 @@ export async function GET(req: NextRequest) {
   if (session.role === "operador") return NextResponse.json({ error: "Sem permissão." }, { status: 403 });
 
   const { searchParams } = new URL(req.url);
-  const de         = searchParams.get("de");
-  const ate        = searchParams.get("ate");
+  const de         = parseDataParam(searchParams.get("de"),  "inicio");
+  const ate        = parseDataParam(searchParams.get("ate"), "fim");
   const fornecedor = searchParams.get("fornecedor")?.trim();
   const tipo       = searchParams.get("tipo");
 
@@ -17,8 +18,8 @@ export async function GET(req: NextRequest) {
 
   if (de || ate) {
     const criadoEm: Record<string, Date> = {};
-    if (de)  criadoEm.gte = new Date(`${de}T00:00:00`);
-    if (ate) criadoEm.lte = new Date(`${ate}T23:59:59`);
+    if (de)  criadoEm.gte = de;
+    if (ate) criadoEm.lte = ate;
     where.criadoEm = criadoEm;
   }
   if (fornecedor) {

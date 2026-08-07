@@ -144,7 +144,10 @@ export default function PedidosPage() {
             {loading ? "Carregando…" : `${totalItens} produto(s) precisam de reposição`}
           </div>
         </div>
-        <Link href="/fornecedores" className="btn btn-secondary btn-sm"><IconTruck size={14} /> Fornecedores</Link>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Link href="/pedidos/historico" className="btn btn-secondary btn-sm"><IconCheckCircle size={14} /> Histórico</Link>
+          <Link href="/fornecedores" className="btn btn-secondary btn-sm"><IconTruck size={14} /> Fornecedores</Link>
+        </div>
       </div>
 
       <div className="page-content">

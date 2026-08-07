@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { notificar } from "@/lib/notify";
+import { podeVerFinanceiro } from "@/lib/permissoes";
 
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -57,7 +58,9 @@ export async function POST(req: NextRequest) {
           produtoId,
           tipo,
           quantidade,
-          precoUnitario:   precoUnitario ?? 0,
+          // Operador não vê preços em nenhuma tela — mesmo que envie o campo (via devtools ou
+          // requisição manual), o valor é ignorado, igual já acontece em PUT /api/produtos/[id].
+          precoUnitario:   podeVerFinanceiro(session.role) ? (precoUnitario ?? 0) : 0,
           estoquePositivo: delta > 0,
           observacao:      observacao || null,
         },
