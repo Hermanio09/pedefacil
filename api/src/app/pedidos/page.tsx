@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { IconTruck, IconSmartphone, IconMail, IconCheckCircle, IconArrowUpCircle, IconAlertTriangle } from "../components/icons";
+import { IconTruck, IconSmartphone, IconMail, IconCheckCircle, IconArrowUpCircle, IconAlertTriangle, IconInbox } from "../components/icons";
 import { SkeletonTable } from "../components/Skeleton";
 
 type Fornecedor = { id: string; nome: string; telefone: string | null; email: string | null };
@@ -14,15 +14,6 @@ type Produto = {
 };
 type ItemPedido  = { produto: Produto; quantidade: number };
 type GrupoPedido = { fornecedor: Fornecedor | null; itens: ItemPedido[] };
-
-function tempoDesde(data: string): string {
-  const ms = Date.now() - new Date(data).getTime();
-  const horas = Math.floor(ms / 3_600_000);
-  if (horas < 1)  return "há poucos minutos";
-  if (horas < 24) return `há ${horas}h`;
-  const dias = Math.floor(horas / 24);
-  return `há ${dias} dia${dias !== 1 ? "s" : ""}`;
-}
 
 type StatusEnvio = {
   fornecedorId:   string;
@@ -41,7 +32,9 @@ export default function PedidosPage() {
 
   const carregar = async () => {
     const produtos: Produto[] = await fetch("/api/produtos").then((r) => r.json());
-    const emAlerta = produtos.filter((p) => p.estoqueAbaixoMinimo);
+    // Só o que ainda precisa de ação — itens já pedidos (aguardando entrega) saem daqui
+    // e aparecem em "Solicitados", pra essa tela não acumular lixo com o tempo.
+    const emAlerta = produtos.filter((p) => p.estoqueAbaixoMinimo && !p.pedidoPendenteEm);
     const mapa = new Map<string, GrupoPedido>();
 
     for (const p of emAlerta) {
@@ -92,20 +85,6 @@ export default function PedidosPage() {
 
     if (pedidos.length === 0) return;
 
-    // Só considera duplicidade pros itens que realmente vão nesse envio (com quantidade > 0),
-    // não em todos os grupos carregados — senão um item parado (qtd zerada) ou o grupo "sem
-    // fornecedor" (que nunca é enviado) dispararia um aviso de duplicidade falso.
-    const produtoIdsDoEnvio = new Set(pedidos.flatMap((p) => p.itens.map((it) => it.produtoId)));
-    const jaPedidos = grupos.some((g) =>
-      g.itens.some((it) => produtoIdsDoEnvio.has(it.produto.id) && it.produto.pedidoPendenteEm)
-    );
-    if (jaPedidos) {
-      const confirmar = window.confirm(
-        "Alguns itens já têm um pedido enviado recentemente, ainda aguardando entrega. Enviar mesmo assim (pode duplicar o pedido)?"
-      );
-      if (!confirmar) return;
-    }
-
     setEnviando(true);
     setResultados(null);
     const res  = await fetch("/api/pedidos/enviar", {
@@ -116,8 +95,8 @@ export default function PedidosPage() {
     const data = await res.json();
     setResultados(data.resultados ?? []);
     setEnviando(false);
-    // Recarrega — sem isso, `pedidoPendenteEm` fica desatualizado em memória e tanto o selo
-    // visual quanto a checagem de duplicidade acima ficam sem efeito até o usuário dar F5.
+    // Recarrega — os itens que acabaram de ser enviados já têm `pedidoPendenteEm` marcado
+    // no banco, então saem dessa lista sozinhos (vão aparecer em "Solicitados").
     await carregar();
   };
 
@@ -145,6 +124,7 @@ export default function PedidosPage() {
           </div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
+          <Link href="/pedidos/solicitados" className="btn btn-secondary btn-sm"><IconInbox size={14} /> Solicitados</Link>
           <Link href="/pedidos/historico" className="btn btn-secondary btn-sm"><IconCheckCircle size={14} /> Histórico</Link>
           <Link href="/fornecedores" className="btn btn-secondary btn-sm"><IconTruck size={14} /> Fornecedores</Link>
         </div>
@@ -260,9 +240,7 @@ export default function PedidosPage() {
                   </div>
                 )}
               </div>
-              {grupo.itens.every((it) => it.produto.pedidoPendenteEm)
-                ? <span className="badge badge-ok"><IconCheckCircle size={12} /> Pedido Enviado</span>
-                : <span className="badge badge-alerta">{grupo.itens.length} item(s)</span>}
+              <span className="badge badge-alerta">{grupo.itens.length} item(s)</span>
             </div>
 
             <div className="table-wrap">
@@ -278,16 +256,7 @@ export default function PedidosPage() {
                 <tbody>
                   {grupo.itens.map((it) => (
                     <tr key={it.produto.id}>
-                      <td style={{ fontWeight: 600 }}>
-                        {it.produto.nome}
-                        {it.produto.pedidoPendenteEm && (
-                          <div style={{ marginTop: 3 }}>
-                            <span className="badge badge-gray" style={{ fontSize: 11 }}>
-                              Pedido enviado {tempoDesde(it.produto.pedidoPendenteEm)}
-                            </span>
-                          </div>
-                        )}
-                      </td>
+                      <td style={{ fontWeight: 600 }}>{it.produto.nome}</td>
                       <td className="stock-warn">{it.produto.estoqueAtual} <span style={{ color: "var(--text-3)", fontSize: 12 }}>{it.produto.unidade}</span></td>
                       <td style={{ color: "var(--text-2)" }}>{it.produto.estoqueMinimo}</td>
                       <td>
