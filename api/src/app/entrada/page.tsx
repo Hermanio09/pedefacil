@@ -1,11 +1,21 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { IconArrowDownCircle } from "../components/icons";
 
 type Produto = { id: string; nome: string; unidade: string; estoqueAtual: number };
 
 export default function EntradaPage() {
+  return (
+    <Suspense fallback={null}>
+      <EntradaForm />
+    </Suspense>
+  );
+}
+
+function EntradaForm() {
+  const searchParams                = useSearchParams();
   const [produtos, setProdutos]     = useState<Produto[]>([]);
   const [produtoId, setProdutoId]   = useState("");
   const [busca, setBusca]           = useState("");
@@ -19,7 +29,20 @@ export default function EntradaPage() {
   const inputRef                    = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    fetch("/api/produtos").then((r) => r.json()).then(setProdutos);
+    fetch("/api/produtos").then((r) => r.json()).then((data: Produto[]) => {
+      setProdutos(data);
+      // Chegando com ?produtoId= (ex: link "Marcar como recebido" da tela de Solicitados),
+      // já pré-seleciona o produto e sugere a quantidade que tinha sido pedida.
+      const idPreSelecionado = searchParams.get("produtoId");
+      const produtoPreSelecionado = idPreSelecionado && data.find((p) => p.id === idPreSelecionado);
+      if (produtoPreSelecionado) {
+        setProdutoId(produtoPreSelecionado.id);
+        setBusca(produtoPreSelecionado.nome);
+        const qtdSugerida = searchParams.get("quantidade");
+        if (qtdSugerida) setQuantidade(qtdSugerida);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const produto   = produtos.find((p) => p.id === produtoId);

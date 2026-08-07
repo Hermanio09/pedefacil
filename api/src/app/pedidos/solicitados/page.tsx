@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { IconTruck, IconSmartphone, IconMail, IconClipboardList, IconInbox } from "../../components/icons";
+import { IconTruck, IconSmartphone, IconMail, IconClipboardList, IconInbox, IconArrowDownCircle } from "../../components/icons";
 import { SkeletonTable } from "../../components/Skeleton";
 
 type Fornecedor = { id: string; nome: string; telefone: string | null; email: string | null };
@@ -80,7 +80,7 @@ export default function PedidosSolicitadosPage() {
       </div>
 
       <div className="page-content">
-        {loading && <div className="card"><SkeletonTable rows={4} cols={5} /></div>}
+        {loading && <div className="card"><SkeletonTable rows={4} cols={6} /></div>}
 
         {!loading && totalItens === 0 && (
           <div className="empty-state">
@@ -120,11 +120,13 @@ export default function PedidosSolicitadosPage() {
                     <th>Mínimo</th>
                     <th>Qtd. pedida</th>
                     <th>Pedido enviado</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   {grupo.itens.map((p) => {
                     const pedida = qtdPedida.get(p.id);
+                    const linkEntrada = `/entrada?produtoId=${p.id}${pedida ? `&quantidade=${pedida.quantidade}` : ""}`;
                     return (
                       <tr key={p.id}>
                         <td style={{ fontWeight: 600 }}>{p.nome}</td>
@@ -134,6 +136,11 @@ export default function PedidosSolicitadosPage() {
                           {pedida ? `${pedida.quantidade} ${pedida.unidade}` : "—"}
                         </td>
                         <td style={{ color: "var(--text-2)" }}>{tempoDesde(p.pedidoPendenteEm!)}</td>
+                        <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                          <Link href={linkEntrada} className="btn btn-ghost btn-sm">
+                            <IconArrowDownCircle size={13} /> Marcar como recebido
+                          </Link>
+                        </td>
                       </tr>
                     );
                   })}
