@@ -55,31 +55,40 @@ function formatarMensagem(fornecedorNome: string, itensPedido: ItemPedido[]): st
   );
 }
 
+// Números de celular brasileiros têm o "nono dígito" (o 9 extra, adicionado em 2012) —
+// mas a API do WhatsApp historicamente espera o formato SEM ele (55 + DDD + 8 dígitos).
+// Sem isso, a 360dialog recusa o envio com "can only send to your verified number".
+function normalizarNumeroBrasil(numero: string): string {
+  const digitos = numero.replace(/\D/g, "");
+  const comCodigoPais = digitos.startsWith("55") ? digitos : `55${digitos}`;
+  const temNonoDigito = comCodigoPais.length === 13 && comCodigoPais[4] === "9";
+  return temNonoDigito ? comCodigoPais.slice(0, 4) + comCodigoPais.slice(5) : comCodigoPais;
+}
+
 async function enviarWhatsapp(numero: string, mensagem: string): Promise<void> {
-  const url = process.env.EVOLUTION_API_URL;
-  const key = process.env.EVOLUTION_API_KEY;
-  const instancia = process.env.EVOLUTION_INSTANCE ?? "pedefacil";
+  const url = process.env.D360_API_URL;
+  const key = process.env.D360_API_KEY;
 
-  if (!url || !key) throw new Error("Evolution API não configurada.");
+  if (!url || !key) throw new Error("360dialog não configurada.");
 
-  const numeroLimpo = numero.replace(/\D/g, "");
-  const numeroFinal = numeroLimpo.startsWith("55") ? numeroLimpo : `55${numeroLimpo}`;
-
-  const res = await fetch(`${url}/message/sendText/${instancia}`, {
+  const res = await fetch(`${url}/v1/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "apikey": key,
+      "D360-API-KEY": key,
     },
     body: JSON.stringify({
-      number: numeroFinal,
-      text: mensagem,
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to: normalizarNumeroBrasil(numero),
+      type: "text",
+      text: { body: mensagem },
     }),
   });
 
   if (!res.ok) {
     const body = await res.text();
-    throw new Error(`Evolution API retornou ${res.status}: ${body}`);
+    throw new Error(`360dialog retornou ${res.status}: ${body}`);
   }
 }
 
