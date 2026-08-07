@@ -43,7 +43,8 @@ export default function ProdutosPage() {
     return true;
   });
 
-  const valorTotalFiltrado = filtrados.reduce((acc, p) => acc + (p.precoUnitario ?? 0) * p.estoqueAtual, 0);
+  const valorTotalFiltrado      = filtrados.reduce((acc, p) => acc + (p.precoUnitario ?? 0) * p.estoqueAtual, 0);
+  const valorRevendaFiltrado    = filtrados.reduce((acc, p) => acc + (p.precoVenda ?? 0) * p.estoqueAtual, 0);
 
   const excluir = async (p: Produto) => {
     if (!confirm(`Excluir "${p.nome}"?\nIsso apaga todo o histórico de movimentações.`)) return;
@@ -93,9 +94,15 @@ export default function ProdutosPage() {
               </div>
 
               {podeVerValores && (
-                <div style={{ marginLeft: "auto", textAlign: "right" }}>
-                  <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Valor total em estoque (filtrado)</div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: "var(--primary)" }}>{fmt(valorTotalFiltrado)}</div>
+                <div style={{ marginLeft: "auto", display: "flex", gap: 28 }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Valor de compra (filtrado)</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "var(--primary)" }}>{fmt(valorTotalFiltrado)}</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: 12, color: "var(--text-3)", fontWeight: 600 }}>Valor de revenda (filtrado)</div>
+                    <div style={{ fontSize: 22, fontWeight: 800, color: "var(--accent)" }}>{fmt(valorRevendaFiltrado)}</div>
+                  </div>
                 </div>
               )}
             </div>
@@ -180,6 +187,9 @@ export default function ProdutosPage() {
                     <tr>
                       <td colSpan={6} style={{ textAlign: "right", fontWeight: 700, color: "var(--text-2)", background: "var(--surface-2)" }}>
                         Total ({filtrados.length} produto{filtrados.length !== 1 ? "s" : ""}):
+                      </td>
+                      <td style={{ fontWeight: 800, fontSize: 15, color: "var(--accent)", background: "var(--surface-2)" }}>
+                        {fmt(valorRevendaFiltrado)}
                       </td>
                       <td style={{ fontWeight: 800, fontSize: 15, color: "var(--primary)", background: "var(--surface-2)" }}>
                         {fmt(valorTotalFiltrado)}
