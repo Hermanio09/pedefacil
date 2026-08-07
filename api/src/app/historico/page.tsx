@@ -8,6 +8,7 @@ type Mov = {
   revertida: boolean; revertidaEm: string | null; revertidaPorNome: string | null;
   produto: { nome: string; unidade: string };
 };
+type Fornecedor = { id: string; nome: string };
 
 const hoje = new Date().toISOString().slice(0, 10);
 const ha30 = new Date(Date.now() - 29 * 86400000).toISOString().slice(0, 10);
@@ -21,12 +22,16 @@ export default function HistoricoPage() {
   const [de, setDe]         = useState(ha30);
   const [ate, setAte]       = useState(hoje);
   const [tipo, setTipo]     = useState("todos");
+  const [fornecedorId, setFornecedorId] = useState("");
+  const [fornecedores, setFornecedores] = useState<Fornecedor[]>([]);
   const [revertendo, setRevertendo] = useState<string | null>(null);
+  const [exportando, setExportando] = useState(false);
   const [erro, setErro]     = useState("");
 
   const carregar = useCallback(async (p: number) => {
     setLoading(true);
     const params = new URLSearchParams({ de, ate, tipo, page: String(p) });
+    if (fornecedorId) params.set("fornecedorId", fornecedorId);
     const res  = await fetch(`/api/historico?${params}`);
     const data = res.ok ? await res.json() : { movimentacoes: [], total: 0, paginas: 1 };
     setMovs(data.movimentacoes);
@@ -34,9 +39,12 @@ export default function HistoricoPage() {
     setPaginas(data.paginas);
     setPagina(p);
     setLoading(false);
-  }, [de, ate, tipo]);
+  }, [de, ate, tipo, fornecedorId]);
 
   useEffect(() => { carregar(1); }, [carregar]);
+  useEffect(() => {
+    fetch("/api/fornecedores").then((r) => (r.ok ? r.json() : [])).then(setFornecedores);
+  }, []);
 
   const reverter = async (mov: Mov) => {
     if (!confirm(`Reverter esta movimentação de ${mov.quantidade} ${mov.produto.unidade} de "${mov.produto.nome}"? O estoque volta ao valor de antes.`)) return;
@@ -51,9 +59,18 @@ export default function HistoricoPage() {
     carregar(pagina);
   };
 
-  const exportarCSV = () => {
+  const exportarCSV = async () => {
+    setExportando(true);
+    // Busca TUDO que bate com os filtros ativos, não só a página exibida na tela —
+    // senão o CSV saía incompleto quando havia mais de 50 registros no período.
+    const params = new URLSearchParams({ de, ate, tipo, exportar: "true" });
+    if (fornecedorId) params.set("fornecedorId", fornecedorId);
+    const res  = await fetch(`/api/historico?${params}`);
+    const data = res.ok ? await res.json() : { movimentacoes: [] };
+    setExportando(false);
+
     const header = "Data,Produto,Tipo,Quantidade,Unidade,Preço Unit.,Total,Observação";
-    const rows = movs.map((m) => [
+    const rows = (data.movimentacoes as Mov[]).map((m) => [
       new Date(m.criadoEm).toLocaleString("pt-BR"),
       `"${m.produto.nome}"`,
       m.tipo,
@@ -78,7 +95,9 @@ export default function HistoricoPage() {
           <div className="page-title">Histórico de Movimentações</div>
           <div className="page-subtitle">{total} registro(s) encontrado(s)</div>
         </div>
-        <button className="btn btn-secondary btn-sm" onClick={exportarCSV} disabled={movs.length === 0}><IconDownload size={14} /> Exportar CSV</button>
+        <button className="btn btn-secondary btn-sm" onClick={exportarCSV} disabled={movs.length === 0 || exportando}>
+          <IconDownload size={14} /> {exportando ? "Exportando…" : "Exportar CSV"}
+        </button>
       </div>
 
       <div className="page-content">
@@ -107,6 +126,13 @@ export default function HistoricoPage() {
                   <option value="entrada">Entradas</option>
                   <option value="saida">Saídas</option>
                   <option value="ajuste">Ajustes</option>
+                </select>
+              </div>
+              <div className="form-group" style={{ margin: 0, width: 190 }}>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-2)", marginBottom: 6, display: "block" }}>Fornecedor</label>
+                <select value={fornecedorId} onChange={(e) => setFornecedorId(e.target.value)} style={{ width: 190 }}>
+                  <option value="">Todos</option>
+                  {fornecedores.map((f) => <option key={f.id} value={f.id}>{f.nome}</option>)}
                 </select>
               </div>
               <button className="btn btn-primary" style={{ alignSelf: "flex-end" }} onClick={() => carregar(1)}>Buscar</button>
