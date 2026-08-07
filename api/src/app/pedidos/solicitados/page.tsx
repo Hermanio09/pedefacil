@@ -13,6 +13,8 @@ type Produto = {
   fornecedor: Fornecedor | null;
 };
 type GrupoSolicitado = { fornecedor: Fornecedor | null; itens: Produto[] };
+type ItemPedidoLog = { produtoId: string; quantidade: number; unidade: string };
+type PedidoLog = { itens: ItemPedidoLog[] };
 
 function tempoDesde(data: string): string {
   const ms = Date.now() - new Date(data).getTime();
@@ -24,33 +26,43 @@ function tempoDesde(data: string): string {
 }
 
 export default function PedidosSolicitadosPage() {
-  const [grupos, setGrupos]   = useState<GrupoSolicitado[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [grupos, setGrupos]     = useState<GrupoSolicitado[]>([]);
+  const [qtdPedida, setQtdPedida] = useState<Map<string, ItemPedidoLog>>(new Map());
+  const [loading, setLoading]   = useState(true);
 
   useEffect(() => {
-    fetch("/api/produtos")
-      .then((r) => (r.ok ? r.json() : []))
-      .then((produtos: Produto[]) => {
-        // Já pedidos, ainda esperando a entrega chegar — some daqui sozinho assim que uma
-        // entrada de estoque for lançada pro produto (o que limpa `pedidoPendenteEm`).
-        const pendentes = produtos.filter((p) => p.estoqueAbaixoMinimo && p.pedidoPendenteEm);
-        const mapa = new Map<string, GrupoSolicitado>();
+    Promise.all([
+      fetch("/api/produtos").then((r) => (r.ok ? r.json() : [])),
+      fetch("/api/pedidos").then((r) => (r.ok ? r.json() : [])),
+    ]).then(([produtos, pedidosLog]: [Produto[], PedidoLog[]]) => {
+      // Já pedidos, ainda esperando a entrega chegar — some daqui sozinho assim que uma
+      // entrada de estoque for lançada pro produto (o que limpa `pedidoPendenteEm`).
+      const pendentes = produtos.filter((p) => p.estoqueAbaixoMinimo && p.pedidoPendenteEm);
+      const mapa = new Map<string, GrupoSolicitado>();
 
-        for (const p of pendentes) {
-          const chave = p.fornecedor?.id ?? "__sem_fornecedor__";
-          if (!mapa.has(chave)) mapa.set(chave, { fornecedor: p.fornecedor, itens: [] });
-          mapa.get(chave)!.itens.push(p);
-        }
+      for (const p of pendentes) {
+        const chave = p.fornecedor?.id ?? "__sem_fornecedor__";
+        if (!mapa.has(chave)) mapa.set(chave, { fornecedor: p.fornecedor, itens: [] });
+        mapa.get(chave)!.itens.push(p);
+      }
 
-        const lista = Array.from(mapa.values()).sort((a, b) => {
-          if (!a.fornecedor) return 1;
-          if (!b.fornecedor) return -1;
-          return a.fornecedor.nome.localeCompare(b.fornecedor.nome);
-        });
-
-        setGrupos(lista);
-        setLoading(false);
+      const lista = Array.from(mapa.values()).sort((a, b) => {
+        if (!a.fornecedor) return 1;
+        if (!b.fornecedor) return -1;
+        return a.fornecedor.nome.localeCompare(b.fornecedor.nome);
       });
+
+      // /api/pedidos vem ordenado do mais recente pro mais antigo — pegando só a primeira
+      // ocorrência de cada produto, fica com a quantidade do último pedido enviado pra ele.
+      const qtds = new Map<string, ItemPedidoLog>();
+      for (const pedido of pedidosLog)
+        for (const item of pedido.itens)
+          if (!qtds.has(item.produtoId)) qtds.set(item.produtoId, item);
+
+      setGrupos(lista);
+      setQtdPedida(qtds);
+      setLoading(false);
+    });
   }, []);
 
   const totalItens = grupos.reduce((acc, g) => acc + g.itens.length, 0);
@@ -68,7 +80,7 @@ export default function PedidosSolicitadosPage() {
       </div>
 
       <div className="page-content">
-        {loading && <div className="card"><SkeletonTable rows={4} cols={3} /></div>}
+        {loading && <div className="card"><SkeletonTable rows={4} cols={5} /></div>}
 
         {!loading && totalItens === 0 && (
           <div className="empty-state">
@@ -106,18 +118,25 @@ export default function PedidosSolicitadosPage() {
                     <th>Produto</th>
                     <th>Estoque atual</th>
                     <th>Mínimo</th>
+                    <th>Qtd. pedida</th>
                     <th>Pedido enviado</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {grupo.itens.map((p) => (
-                    <tr key={p.id}>
-                      <td style={{ fontWeight: 600 }}>{p.nome}</td>
-                      <td className="stock-warn">{p.estoqueAtual} <span style={{ color: "var(--text-3)", fontSize: 12 }}>{p.unidade}</span></td>
-                      <td style={{ color: "var(--text-2)" }}>{p.estoqueMinimo}</td>
-                      <td style={{ color: "var(--text-2)" }}>{tempoDesde(p.pedidoPendenteEm!)}</td>
-                    </tr>
-                  ))}
+                  {grupo.itens.map((p) => {
+                    const pedida = qtdPedida.get(p.id);
+                    return (
+                      <tr key={p.id}>
+                        <td style={{ fontWeight: 600 }}>{p.nome}</td>
+                        <td className="stock-warn">{p.estoqueAtual} <span style={{ color: "var(--text-3)", fontSize: 12 }}>{p.unidade}</span></td>
+                        <td style={{ color: "var(--text-2)" }}>{p.estoqueMinimo}</td>
+                        <td style={{ fontWeight: 700, color: "var(--primary)" }}>
+                          {pedida ? `${pedida.quantidade} ${pedida.unidade}` : "—"}
+                        </td>
+                        <td style={{ color: "var(--text-2)" }}>{tempoDesde(p.pedidoPendenteEm!)}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
