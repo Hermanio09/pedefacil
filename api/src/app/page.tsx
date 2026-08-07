@@ -10,6 +10,7 @@ import {
 type Produto = {
   id: string; nome: string; unidade: string;
   estoqueAtual: number; estoqueMinimo: number; estoqueAbaixoMinimo: boolean;
+  pedidoPendenteEm: string | null;
   fornecedor?: { nome: string; whatsapp: string | null };
 };
 
@@ -32,10 +33,13 @@ export default function Dashboard() {
   }, []);
 
   const emAlerta = produtos.filter((p) => p.estoqueAbaixoMinimo);
+  // Só os que ainda não têm um pedido enviado — itens já pedidos continuam com estoque baixo
+  // (isso não muda até chegar), mas não fazem sentido nos avisos de "precisa agir agora".
+  const precisaPedido = emAlerta.filter((p) => !p.pedidoPendenteEm);
 
   const abrirWhatsAppAlerta = () => {
-    if (emAlerta.length === 0) return;
-    const linhas = emAlerta
+    if (precisaPedido.length === 0) return;
+    const linhas = precisaPedido
       .map((p) => `• ${p.nome}: ${p.estoqueAtual} ${p.unidade} (mín: ${p.estoqueMinimo})`)
       .join("\n");
     const msg = `⚠ Alerta de estoque baixo — PedeFacil\n\n${linhas}\n\nPor favor, providenciar reposição.`;
@@ -49,9 +53,9 @@ export default function Dashboard() {
           <div className="page-title">Dashboard</div>
           <div className="page-subtitle">Visão geral do estoque</div>
         </div>
-        {emAlerta.length > 0 && (
+        {precisaPedido.length > 0 && (
           <button className="btn btn-warning btn-sm" onClick={abrirWhatsAppAlerta}>
-            <IconWhatsapp size={15} /> Alerta WhatsApp ({emAlerta.length})
+            <IconWhatsapp size={15} /> Alerta WhatsApp ({precisaPedido.length})
           </button>
         )}
       </div>
@@ -97,16 +101,16 @@ export default function Dashboard() {
         </div>
         )}
 
-        {/* Card de alertas melhorado */}
-        {!loading && emAlerta.length > 0 && (() => {
-          const criticos = emAlerta.filter((p) => p.estoqueAtual === 0);
-          const baixos   = emAlerta.filter((p) => p.estoqueAtual > 0);
+        {/* Card de alertas melhorado — só itens que ainda não têm pedido enviado */}
+        {!loading && precisaPedido.length > 0 && (() => {
+          const criticos = precisaPedido.filter((p) => p.estoqueAtual === 0);
+          const baixos   = precisaPedido.filter((p) => p.estoqueAtual > 0);
           return (
             <div className="alert-card">
               <div className="alert-card-header">
                 <div className="alert-card-title">
                   <span className="alert-card-icon"><IconAlertTriangle size={17} /></span>
-                  {emAlerta.length} produto{emAlerta.length > 1 ? "s" : ""} precisam de atenção
+                  {precisaPedido.length} produto{precisaPedido.length > 1 ? "s" : ""} precisam de atenção
                 </div>
                 <Link href="/pedidos" className="btn btn-danger btn-sm">
                   <IconClipboardList size={14} /> Fazer Pedido →
@@ -208,7 +212,9 @@ export default function Dashboard() {
                       <td style={{ color: "var(--text-2)" }}>{p.estoqueMinimo}</td>
                       <td>
                         {p.estoqueAbaixoMinimo
-                          ? <span className="badge badge-alerta">⚠ Baixo</span>
+                          ? (p.pedidoPendenteEm
+                              ? <span className="badge badge-ok">✓ Pedido Enviado</span>
+                              : <span className="badge badge-alerta">⚠ Baixo</span>)
                           : <span className="badge badge-ok">✓ OK</span>}
                       </td>
                     </tr>
