@@ -37,7 +37,7 @@ function escaparHtml(s: string): string {
     .replace(/'/g, "&#39;");
 }
 
-function formatarMensagem(fornecedorNome: string, itensPedido: ItemPedido[]): string {
+function formatarMensagem(fornecedorNome: string, empresaNome: string, itensPedido: ItemPedido[]): string {
   const itens = itensPedido
     .map((it) => `• ${it.nome} — ${it.quantidade} ${it.unidade}`)
     .join("\n");
@@ -48,10 +48,13 @@ function formatarMensagem(fornecedorNome: string, itensPedido: ItemPedido[]): st
 
   return (
     `Olá ${fornecedorNome}! 🛒\n\n` +
+    // Um fornecedor pode atender vários clientes do StockFacil — sem o nome do
+    // estabelecimento aqui, ele não teria como saber quem está pedindo.
+    `Pedido de: *${empresaNome}*\n\n` +
     `Segue nosso pedido de reposição:\n\n${itens}\n\n` +
-    `Data: ${data}\n` +
-    `Sistema: StockFacil\n\n` +
-    `Por favor confirme o recebimento. Obrigado!`
+    `Data: ${data}\n\n` +
+    `Por favor confirme o recebimento. Obrigado!\n\n` +
+    `_via StockFacil_`
   );
 }
 
@@ -92,7 +95,7 @@ async function enviarWhatsapp(numero: string, mensagem: string): Promise<void> {
   }
 }
 
-async function enviarEmail(destinatario: string, fornecedorNome: string, mensagem: string): Promise<void> {
+async function enviarEmail(destinatario: string, empresaNome: string, mensagem: string): Promise<void> {
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT ?? 587);
   const user = process.env.SMTP_USER;
@@ -109,9 +112,9 @@ async function enviarEmail(destinatario: string, fornecedorNome: string, mensage
   });
 
   await transporter.sendMail({
-    from: `StockFacil <${from}>`,
+    from: `${empresaNome} (via StockFacil) <${from}>`,
     to: destinatario,
-    subject: `Pedido de Reposição — ${new Date().toLocaleDateString("pt-BR")}`,
+    subject: `Pedido de Reposição — ${empresaNome} — ${new Date().toLocaleDateString("pt-BR")}`,
     text: mensagem,
     html: mensagem
       .split("\n")
@@ -132,6 +135,12 @@ export async function POST(req: NextRequest) {
   if (!Array.isArray(pedidos) || pedidos.length === 0) {
     return NextResponse.json({ error: "Nenhum pedido enviado." }, { status: 400 });
   }
+
+  const empresa = await db.empresa.findUnique({
+    where:  { id: session.empresaId },
+    select: { nome: true },
+  });
+  const empresaNome = empresa?.nome ?? "—";
 
   // dispara todos em paralelo
   const resultados: ResultadoEnvio[] = await Promise.all(
@@ -155,7 +164,7 @@ export async function POST(req: NextRequest) {
       }
 
       const itensValidos = Array.isArray(pedido.itens) ? pedido.itens : [];
-      const mensagem = formatarMensagem(fornecedor.nome, itensValidos);
+      const mensagem = formatarMensagem(fornecedor.nome, empresaNome, itensValidos);
       const resultado: ResultadoEnvio = {
         fornecedorId:   fornecedor.id,
         fornecedorNome: fornecedor.nome,
@@ -180,7 +189,7 @@ export async function POST(req: NextRequest) {
       // Email
       if (fornecedor.email) {
         try {
-          await enviarEmail(fornecedor.email, fornecedor.nome, mensagem);
+          await enviarEmail(fornecedor.email, empresaNome, mensagem);
           resultado.email = "enviado";
         } catch (e) {
           resultado.email = "falhou";
